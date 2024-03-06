@@ -1,0 +1,12 @@
+Flask
+requests
+PyMySQL
+mariadb
+flask-swagger-ui
+flasgger
+PyJWT
+pytz
+python-decouple
+Werkzeug
+instagrapi
+Pillow
