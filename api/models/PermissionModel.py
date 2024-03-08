@@ -7,14 +7,13 @@ class PermissionType(Enum):
 
 
 class PermissionName(Enum):
-    VERIFY = 1
-    ROLES_MANAGER = 2
-    USERS_MANAGER = 3
-    COURSES_MANAGER = 4
-    CLASSES_MANAGER = 5
-    VOTES_MANAGER = 6
-    GROUPS_MANAGER = 7
-    TOPICS_MANAGER = 8
+    ROLES_MANAGER = 1
+    USERS_MANAGER = 2
+    COURSES_MANAGER = 3
+    CLASSES_MANAGER = 4
+    VOTES_MANAGER = 5
+    GROUPS_MANAGER = 6
+    TOPICS_MANAGER = 7
 
 
 class Permission:
