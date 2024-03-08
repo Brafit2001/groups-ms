@@ -103,13 +103,30 @@ class GroupService:
             connection_dbgroups = get_connection('dbgroups')
             with (connection_dbgroups.cursor()) as cursor_dbgroups:
                 query = (
-                    "update groups set name = '{}', description = '{}', class='{}' "
+                    "update `groups` set name = '{}', description = '{}', class='{}' "
                     "where id = '{}'").format(
                     group.name, group.description, group.classId, group.groupId)
                 cursor_dbgroups.execute(query)
                 connection_dbgroups.commit()
             connection_dbgroups.close()
             return f'Group {group.groupId} updated'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def assign_group(cls, userId: int, groupId: int):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = "insert into relationusersgroups set user='{}', `group`='{}'".format(userId, groupId)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return 'User was assigned to group successfully'
         except NotFoundException:
             raise
         except Exception as ex:

@@ -122,3 +122,37 @@ def edit_group(group_id):
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/assign-user-to-group', methods=['POST'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])
+def assign_group():
+    try:
+        user_id = int(request.json["user"])
+        group_id = int(request.json["group"])
+        response_message = GroupService.assign_group(user_id, group_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except mariadb.IntegrityError as ex:
+        message = str(ex)
+        if "Duplicate entry" in message:
+            message = "User is already assigned to the group"
+        elif "foreign key constraint fails" in message and "FOREIGN KEY (`user`)" in message:
+            message = "User does not exist"
+        elif "foreign key constraint fails" in message and "FOREIGN KEY (`group`)" in message:
+            message = "Group does not exist"
+        response = jsonify({'message': message, 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
