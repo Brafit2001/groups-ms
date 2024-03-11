@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.TopicModel import Topic
 from api.services.TopicService import TopicService
-from api.utils.AppExceptions import EmptyDbException, NotFoundException
+from api.utils.AppExceptions import EmptyDbException, NotFoundException, handle_maria_db_exception
 from api.utils.Logger import Logger
 from api.utils.Security import Security
 
@@ -73,12 +73,7 @@ def add_topic():
         response = jsonify({'message': 'Bad body format', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
     except mariadb.IntegrityError as ex:
-        message = str(ex)
-        if 'Duplicate entry' in str(ex):
-            message = 'Topic title already exists in the same group'
-        elif 'foreign key constraint fails' in str(ex):
-            message = 'The group does not exist'
-        response = jsonify({'message': message, 'success': False})
+        response = handle_maria_db_exception(ex)
         return response, HTTPStatus.BAD_REQUEST
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
@@ -115,16 +110,11 @@ def edit_topic(topic_id):
         response_message = TopicService.update_topic(_topic)
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
-    except mariadb.IntegrityError as ex:
-        message = str(ex)
-        if 'Duplicate entry' in str(ex):
-            message = 'Topic title already exists in the same group'
-        elif 'foreign key constraint fails' in str(ex):
-            message = 'The group does not exist'
-        response = jsonify({'message': message, 'success': False})
-        return response, HTTPStatus.BAD_REQUEST
     except KeyError:
         response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except mariadb.IntegrityError as ex:
+        response = handle_maria_db_exception(ex)
         return response, HTTPStatus.BAD_REQUEST
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})

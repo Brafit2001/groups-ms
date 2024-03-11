@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request
 from api.models.GroupModel import Group
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.services.GroupService import GroupService
-from api.utils.AppExceptions import EmptyDbException, NotFoundException
+from api.utils.AppExceptions import EmptyDbException, NotFoundException, handle_maria_db_exception
 from api.utils.Logger import Logger
 from api.utils.Security import Security
 
@@ -73,8 +73,8 @@ def add_group():
     except KeyError:
         response = jsonify({'message': 'Bad body format', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
-    except mariadb.IntegrityError:
-        response = jsonify({'message': 'Groupname is already taken', 'success': False})
+    except mariadb.IntegrityError as ex:
+        response = handle_maria_db_exception(ex)
         return response, HTTPStatus.BAD_REQUEST
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
@@ -113,6 +113,9 @@ def edit_group(group_id):
         return response, HTTPStatus.OK
     except KeyError:
         response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except mariadb.IntegrityError as ex:
+        response = handle_maria_db_exception(ex)
         return response, HTTPStatus.BAD_REQUEST
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
