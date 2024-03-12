@@ -129,6 +129,10 @@ class Security:
                         if permission not in permissions_list:
                             raise NotAuthorized('The user does not have the appropriate permissions')
                     return func(**kwargs)
+                except requests.exceptions.ConnectionError:
+                    response = jsonify({'success': False, 'message': "Could not authorize user - Users microservice "
+                                                                     "is not available"})
+                    return response, HTTPStatus.SERVICE_UNAVAILABLE
                 except NotAuthorized as ex:
                     response = jsonify({'success': False, 'message': ex.message})
                     return response, ex.error_code
