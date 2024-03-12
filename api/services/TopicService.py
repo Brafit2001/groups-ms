@@ -7,17 +7,19 @@ from api.models.TopicModel import Topic
 from api.models.TopicModel import row_to_topic, Topic
 from api.utils.AppExceptions import NotFoundException, EmptyDbException
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 
 
 class TopicService:
 
     @classmethod
-    def get_all_topics(cls) -> list[Topic]:
+    def get_all_topics(cls, params: QueryParameters) -> list[Topic]:
         try:
             connection_dbgroups = get_connection('dbgroups')
             topics_list = []
             with (connection_dbgroups.cursor()) as cursor_dbtopics:
                 query = "select * from topics"
+                query = params.add_to_query(query)
                 cursor_dbtopics.execute(query)
                 result_set = cursor_dbtopics.fetchall()
                 if not result_set:

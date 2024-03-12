@@ -9,6 +9,7 @@ from api.models.TopicModel import Topic
 from api.services.TopicService import TopicService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException, handle_maria_db_exception
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 topics = Blueprint('topics_blueprint', __name__)
@@ -19,7 +20,8 @@ topics = Blueprint('topics_blueprint', __name__)
 @Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.READ)])
 def get_all_topics():
     try:
-        topics_list = TopicService.get_all_topics()
+        params = QueryParameters(request)
+        topics_list = TopicService.get_all_topics(params)
         response_topics = []
         for topic in topics_list:
             response_topics.append(topic.to_json())

@@ -6,19 +6,22 @@ from api.database.db import get_connection
 from api.models.GroupModel import Group
 from api.utils.AppExceptions import NotFoundException, EmptyDbException
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 
 
 class GroupService:
 
     @classmethod
-    def get_all_groups(cls) -> list[Group]:
+    def get_all_groups(cls, params: QueryParameters) -> list[Group]:
         try:
             connection_dbgroups = get_connection('dbgroups')
             groups_list = []
             with (connection_dbgroups.cursor()) as cursor_dbgroups:
-                query = "select * from groups"
+                query = "select * from `groups`"
+                query = params.add_to_query(query)
                 cursor_dbgroups.execute(query)
                 result_set = cursor_dbgroups.fetchall()
+
                 if not result_set:
                     raise EmptyDbException("No groups found")
                 for row in result_set:

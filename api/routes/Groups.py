@@ -9,6 +9,7 @@ from api.models.PermissionModel import PermissionName, PermissionType
 from api.services.GroupService import GroupService
 from api.utils.AppExceptions import EmptyDbException, NotFoundException, handle_maria_db_exception
 from api.utils.Logger import Logger
+from api.utils.QueryParameters import QueryParameters
 from api.utils.Security import Security
 
 groups = Blueprint('groups_blueprint', __name__)
@@ -19,7 +20,8 @@ groups = Blueprint('groups_blueprint', __name__)
 @Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.READ)])
 def get_all_groups():
     try:
-        groups_list = GroupService.get_all_groups()
+        params = QueryParameters(request)
+        groups_list = GroupService.get_all_groups(params)
         response_groups = []
         for group in groups_list:
             response_groups.append(group.to_json())
