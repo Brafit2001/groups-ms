@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import mariadb
 from flask import Blueprint, jsonify, request
-
+import datetime
 from api.models.PermissionModel import PermissionName, PermissionType
 from api.models.TopicModel import Topic
 from api.services.TopicService import TopicService
@@ -66,8 +66,13 @@ def get_topic_by_id(topic_id: int):
 @Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.WRITE)])
 def add_topic():
     try:
+        # Guardamos la fecha en formato datetime
+        deadline = datetime.datetime.fromisoformat(request.json["deadline"])
+        # Convertimos a utc y guardamos en formato Y-m-d H:M:S
+        deadline_utc = deadline.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         _topic = Topic(topicId=0, groupId=request.json["group"], title=request.json["title"],
-                       deadline=request.json["deadline"], unit=request.json["unit"])
+                       deadline=deadline_utc, unit=request.json["unit"])
+
         TopicService.add_topic(_topic)
         response = jsonify({'message': 'Topic created successfully', 'success': True})
         return response, HTTPStatus.OK
