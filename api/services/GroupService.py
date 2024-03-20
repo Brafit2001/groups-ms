@@ -121,7 +121,7 @@ class GroupService:
             raise
 
     @classmethod
-    def assign_group(cls, userId: int, groupId: int):
+    def assign_user(cls, userId: int, groupId: int):
         try:
             connection_dbgroups = get_connection('dbgroups')
             with connection_dbgroups.cursor() as cursor_dbgroups:
@@ -130,6 +130,61 @@ class GroupService:
                 connection_dbgroups.commit()
             connection_dbgroups.close()
             return 'User was assigned to group successfully'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def assign_topic(cls, topic_id, group_id):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = "insert into relationtopicsgroups set topic='{}', `group`='{}'".format(topic_id, group_id)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return 'Topic was assigned to group successfully'
+        except mariadb.IntegrityError as ex:
+            raise
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_group_id_by_name(cls, params: QueryParameters):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            group = None
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT g.id FROM dbgroups.`groups` g "
+                         "INNER JOIN dbcourses.`classes` c ON g.class = c.id "
+                         "INNER JOIN dbcourses.subjects s ON c.subject = s.id "
+                         "INNER JOIN dbcourses.courses co ON co.id = s.course "
+                         "WHERE g.`name`= '{}' AND "
+                         "c.title = '{}' AND "
+                         "s.title = '{}' AND "
+                         "co.title = '{}' AND "
+                         "co.`year`= '{}'").format(
+                    params.name,
+                    params.class_attribute,
+                    params.subject,
+                    params.course,
+                    params.year
+                )
+                cursor_dbgroups.execute(query)
+                row = cursor_dbgroups.fetchone()
+                if row is not None:
+                    group = row[0]
+                else:
+                    raise NotFoundException("Group not found")
+            connection_dbgroups.close()
+            return group
         except NotFoundException:
             raise
         except Exception as ex:

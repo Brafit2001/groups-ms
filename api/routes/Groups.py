@@ -68,7 +68,8 @@ def add_group():
     try:
 
         _group = Group(groupId=0,
-                       name=request.json["name"], description=request.json["description"],classId=request.json["class"])
+                       name=request.json["name"], description=request.json["description"],
+                       classId=request.json["class"])
         GroupService.add_group(_group)
         response = jsonify({'message': 'Group created successfully', 'success': True})
         return response, HTTPStatus.OK
@@ -109,7 +110,8 @@ def delete_group(group_id):
 def edit_group(group_id):
     try:
         _group = Group(groupId=group_id,
-                       name=request.json["name"], description=request.json["description"],classId=request.json["class"])
+                       name=request.json["name"], description=request.json["description"],
+                       classId=request.json["class"])
         response_message = GroupService.update_group(_group)
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
@@ -132,12 +134,64 @@ def edit_group(group_id):
 @groups.route('/assign-user-to-group', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])
-def assign_group():
+def assign_group_by_id():
     try:
         user_id = int(request.json["user"])
         group_id = int(request.json["group"])
-        response_message = GroupService.assign_group(user_id, group_id)
+        response_message = GroupService.assign_user(user_id, group_id)
         response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except mariadb.IntegrityError as ex:
+        message = handle_maria_db_exception(ex)
+        response = jsonify({'message': message, 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/assign-topic-to-group', methods=['POST'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])
+def assign_topic_to_group():
+    try:
+        topic_id = request.json.get('topic')
+        group_id = request.json.get('group')
+        response_message = GroupService.assign_topic(topic_id, group_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except mariadb.IntegrityError as ex:
+        response = handle_maria_db_exception(ex)
+        return response, HTTPStatus.BAD_REQUEST
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/find-id-by-name', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.READ)])
+def find_group_id_by_name():
+    try:
+        params = QueryParameters(request)
+        response_message = GroupService.get_group_id_by_name(params)
+        response = jsonify({'groupId': response_message, 'success': True})
         return response, HTTPStatus.OK
     except mariadb.IntegrityError as ex:
         message = str(ex)
@@ -160,4 +214,3 @@ def assign_group():
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
-

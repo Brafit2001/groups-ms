@@ -1,8 +1,7 @@
 class Topic:
 
-    def __init__(self, topicId, groupId, title, deadline, unit):
+    def __init__(self, topicId, title, deadline, unit):
         self.topicId = topicId
-        self.groupId = groupId
         self.title = title
         self.deadline = deadline
         self.unit = unit
@@ -10,7 +9,6 @@ class Topic:
     def to_json(self):
         return {
             'topicId': self.topicId,
-            'groupId': self.groupId,
             'title': self.title,
             'deadline': self.deadline,
             'unit': self.unit
@@ -20,8 +18,7 @@ class Topic:
 def row_to_topic(row):
     return Topic(
         topicId=row[0],
-        groupId=row[1],
-        title=row[2],
-        deadline=row[3],
-        unit=row[4]
+        title=row[1],
+        deadline=row[2],
+        unit=row[3]
     )

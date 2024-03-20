@@ -47,13 +47,19 @@ class NotAuthorized(Exception):
 
 def handle_maria_db_exception(ex):
     message = str(ex)
-    print(message)
+
     if 'foreign key constraint fails' in str(ex) and 'FOREIGN KEY (`group`)' in str(ex):
         message = 'The group does not exist'
     elif 'foreign key constraint fails' in str(ex) and 'FOREIGN KEY (`class`)' in str(ex):
         message = 'The class does not exist'
+    elif "foreign key constraint fails" in message and "FOREIGN KEY (`user`)" in message:
+        message = "User does not exist"
     elif ('Duplicate entry' and 'uq_topic_name') in str(ex):
         message = 'Topic title already exists in the same group'
     elif ('Duplicate entry' and 'uq_group_name') in str(ex):
         message = 'Group already exists in the same class'
+    elif ("Duplicate entry" and "User") in message:
+        message = "User is already assigned to the group"
+    elif ("Duplicate entry" and "PRIMARY") in message:
+        message = "Topic is already assigned to the group"
     return jsonify({'message': message, 'success': False})

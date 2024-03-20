@@ -65,8 +65,8 @@ class TopicService:
         try:
             connection_dbgroups = get_connection('dbgroups')
             with (connection_dbgroups.cursor()) as cursor_dbtopics:
-                query = "insert into `topics` set `group` = '{}', title = '{}', deadline='{}', unit = '{}'".format(
-                    topic.groupId, topic.title, topic.deadline, topic.unit)
+                query = "insert into `topics` set title = '{}', deadline='{}', unit = '{}'".format(
+                    topic.title, topic.deadline, topic.unit)
                 cursor_dbtopics.execute(query)
                 connection_dbgroups.commit()
             connection_dbgroups.close()
@@ -106,13 +106,30 @@ class TopicService:
             connection_dbgroups = get_connection('dbgroups')
             with (connection_dbgroups.cursor()) as cursor_dbtopics:
                 query = (
-                    "update topics set `group` = '{}', title = '{}', deadline='{}', unit = '{}' "
+                    "update topics set title = '{}', deadline='{}', unit = '{}' "
                     "where id = '{}'").format(
-                    topic.groupId, topic.title, topic.deadline, topic.unit, topic.topicId)
+                    topic.title, topic.deadline, topic.unit, topic.topicId)
                 cursor_dbtopics.execute(query)
                 connection_dbgroups.commit()
             connection_dbgroups.close()
             return f'Topic {topic.topicId} updated'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def assign_group(cls, topic_id, group_id):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = "insert into relationtopicsgroups set topic='{}', `group`='{}'".format(topic_id, group_id)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return 'Group was assigned to topic successfully'
         except NotFoundException:
             raise
         except Exception as ex:

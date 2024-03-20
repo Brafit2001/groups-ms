@@ -70,7 +70,7 @@ def add_topic():
         deadline = datetime.datetime.fromisoformat(request.json["deadline"])
         # Convertimos a utc y guardamos en formato Y-m-d H:M:S
         deadline_utc = deadline.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-        _topic = Topic(topicId=0, groupId=request.json["group"], title=request.json["title"],
+        _topic = Topic(topicId=0, title=request.json["title"],
                        deadline=deadline_utc, unit=request.json["unit"])
 
         TopicService.add_topic(_topic)
@@ -112,7 +112,7 @@ def delete_topic(topic_id):
 @Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.WRITE)])
 def edit_topic(topic_id):
     try:
-        _topic = Topic(topicId=topic_id, groupId=request.json["group"], title=request.json["title"],
+        _topic = Topic(topicId=topic_id, title=request.json["title"],
                        deadline=request.json["deadline"], unit=request.json["unit"])
         response_message = TopicService.update_topic(_topic)
         response = jsonify({'message': response_message, 'success': True})
@@ -122,6 +122,32 @@ def edit_topic(topic_id):
         return response, HTTPStatus.BAD_REQUEST
     except mariadb.IntegrityError as ex:
         response = handle_maria_db_exception(ex)
+        return response, HTTPStatus.BAD_REQUEST
+    except NotFoundException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@topics.route('/assign-group-to-topic', methods=['POST'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.WRITE)])
+def assign_group_to_topic():
+    try:
+        topic_id = request.json.get('topic')
+        group_id = request.json.get('group')
+        response_message = TopicService.assign_group(topic_id, group_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except mariadb.IntegrityError as ex:
+        response = handle_maria_db_exception(ex)
+        return response, HTTPStatus.BAD_REQUEST
+    except KeyError:
+        response = jsonify({'message': 'Bad body format', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
