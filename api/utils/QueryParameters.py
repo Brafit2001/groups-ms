@@ -1,6 +1,7 @@
 class QueryParameters:
 
     def __init__(self, request):
+        self.id = request.args.get("ids")
         self.description = request.args.get("description")
         self.class_attribute = request.args.get("class")
         self.name = request.args.get("name")
@@ -21,7 +22,17 @@ class QueryParameters:
                 else:
                     column = param
                 if "where" not in query:
-                    query += f" where `{column}` in ('{param_value}')"
+                    query += f" where `{column}` in {self.parseParam(param, param_value)}"
                 else:
-                    query += f" and `{column}` in ('{param_value}')"
+                    query += f" and `{column}` in {self.parseParam(param, param_value)}"
         return query
+
+    def parseParam(self, param, value):
+        if param == "id":
+            id_list = self.id.split(',')
+            if len(id_list) == 1:
+                return f"('{id_list[0]}')"
+            else:
+                return tuple(self.id.split(','))
+        else:
+            return f"('{value}')"

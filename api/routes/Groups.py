@@ -61,6 +61,54 @@ def get_group_by_id(group_id: int):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@groups.route('/<group_id>/users', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.READ)])
+def get_group_users(group_id: int):
+    try:
+        group_id = int(group_id)
+        users_list = GroupService.get_group_users(group_id)
+        response_users = []
+        for userId in users_list:
+            response_users.append({'id': userId})
+        response = jsonify({'success': True, 'data': response_users})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/<group_id>/topics', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.READ)])
+def get_group_topics(group_id: int):
+    try:
+        group_id = int(group_id)
+        topics_list = GroupService.get_group_topics(group_id)
+        response_topics = []
+        for topicId in topics_list:
+            response_topics.append({'id': topicId})
+        response = jsonify({'success': True, 'data': response_topics})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @groups.route('/', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])

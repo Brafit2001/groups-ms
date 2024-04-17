@@ -8,7 +8,7 @@ class Topic:
 
     def to_json(self):
         return {
-            'topicId': self.topicId,
+            'id': self.topicId,
             'title': self.title,
             'deadline': self.deadline,
             'unit': self.unit

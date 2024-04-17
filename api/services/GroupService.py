@@ -3,7 +3,7 @@ import traceback
 import mariadb
 
 from api.database.db import get_connection
-from api.models.GroupModel import Group
+from api.models.GroupModel import Group, row_to_group
 from api.utils.AppExceptions import NotFoundException, EmptyDbException
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
@@ -192,11 +192,52 @@ class GroupService:
             Logger.add_to_log("error", traceback.format_exc())
             raise
 
+    @classmethod
+    def get_group_users(cls, groupId):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            users_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = "select * from relationusersgroups where `group` = '{}'".format(groupId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
 
-def row_to_group(row):
-    return Group(
-        groupId=row[0],
-        name=row[1],
-        description=row[2],
-        classId=row[3]
-    )
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    userId = row[1]
+                    users_list.append(userId)
+            connection_dbgroups.close()
+            return users_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_group_topics(cls, groupId):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            topics_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = "select * from relationtopicsgroups where `group` = '{}'".format(groupId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    topicId = row[1]
+                    topics_list.append(topicId)
+            connection_dbgroups.close()
+            return topics_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+

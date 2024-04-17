@@ -9,8 +9,17 @@ class Group:
 
     def to_json(self):
         return {
-            'groupId': self.groupId,
+            'id': self.groupId,
             'name': self.name,
             'description': self.description,
-            'classId': self.classId
+            'class': self.classId
         }
+
+
+def row_to_group(row):
+    return Group(
+        groupId=row[0],
+        name=row[1],
+        description=row[2],
+        classId=row[3]
+    )
