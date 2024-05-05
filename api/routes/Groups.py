@@ -69,10 +69,40 @@ def get_group_users(group_id: int):
         group_id = int(group_id)
         users_list = GroupService.get_group_users(group_id)
         response_users = []
-        for userId in users_list:
-            response_users.append({'id': userId})
+        for user in users_list:
+            response_users.append(user.to_json())
         response = jsonify({'success': True, 'data': response_users})
         return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/<group_id>/users-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.READ)])
+def get_group_remaining_users(group_id: int):
+    try:
+        group_id = int(group_id)
+        users_list = GroupService.get_group_remaining_users(group_id)
+        response_users = []
+        for user in users_list:
+            response_users.append(user.to_json())
+        response = jsonify({'success': True, 'data': response_users})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
@@ -93,10 +123,40 @@ def get_group_topics(group_id: int):
         group_id = int(group_id)
         topics_list = GroupService.get_group_topics(group_id)
         response_topics = []
-        for topicId in topics_list:
-            response_topics.append({'id': topicId})
+        for topic in topics_list:
+            response_topics.append(topic.to_json())
         response = jsonify({'success': True, 'data': response_topics})
         return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/<group_id>/topics-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.READ)])
+def get_group_remaining_topics(group_id: int):
+    try:
+        group_id = int(group_id)
+        topics_list = GroupService.get_group_remaining_topics(group_id)
+        response_topics = []
+        for topic in topics_list:
+            response_topics.append(topic.to_json())
+        response = jsonify({'success': True, 'data': response_topics})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
     except NotFoundException as ex:
         response = jsonify({'message': ex.message, 'success': False})
         return response, ex.error_code
@@ -150,6 +210,51 @@ def delete_group(group_id):
         Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': str(ex), 'success': False})
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/<group_id>/users/<user_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])
+def delete_group_user(*args, **kwargs):
+    try:
+        group_id = int(kwargs["group_id"])
+        user_id = int(kwargs["user_id"])
+        response_message = GroupService.delete_group_user(groupId=group_id, userId=user_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group and User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@groups.route('/<group_id>/topics/<topic_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])
+def delete_group_topic(*args, **kwargs):
+    try:
+        group_id = int(kwargs["group_id"])
+        topic_id = int(kwargs["topic_id"])
+        response_message = GroupService.delete_group_topic(groupId=group_id, topicId=topic_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group and User id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
 
 
 @groups.route('/<group_id>', methods=['PUT'])

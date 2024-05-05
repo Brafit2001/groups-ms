@@ -61,6 +61,60 @@ def get_topic_by_id(topic_id: int):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@topics.route('/<topic_id>/groups', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.READ)])
+def get_topic_groups(topic_id: int):
+    try:
+        topic_id = int(topic_id)
+        groups_list = TopicService.get_topic_groups(topic_id)
+        response_groups = []
+        for group in groups_list:
+            response_groups.append(group.to_json())
+        response = jsonify({'success': True, 'data': response_groups})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Topic id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@topics.route('/<topic_id>/groups-remaining', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.READ)])
+def get_topic_remaining_groups(topic_id: int):
+    try:
+        topic_id = int(topic_id)
+        groups_list = TopicService.get_topic_remaining_groups(topic_id)
+        response_groups = []
+        for group in groups_list:
+            response_groups.append(group.to_json())
+        response = jsonify({'success': True, 'data': response_groups})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Topic id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @topics.route('/', methods=['POST'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.WRITE)])
@@ -100,6 +154,28 @@ def delete_topic(topic_id):
     except NotFoundException as ex:
         response = jsonify({'success': False, 'message': ex.message})
         return response, ex.error_code
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@topics.route('/<topic_id>/groups/<group_id>', methods=['DELETE'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.GROUPS_MANAGER, PermissionType.WRITE)])
+def delete_topic_group(*args, **kwargs):
+    try:
+        topic_id = int(kwargs["topic_id"])
+        group_id = int(kwargs["group_id"])
+        response_message = TopicService.delete_topic_group(topicId=topic_id, groupId=group_id)
+        response = jsonify({'message': response_message, 'success': True})
+        return response, HTTPStatus.OK
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Group and User id must be an integer", 'success': False})
     except Exception as ex:
         Logger.add_to_log("error", str(ex))
         Logger.add_to_log("error", traceback.format_exc())

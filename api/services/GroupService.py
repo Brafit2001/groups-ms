@@ -4,6 +4,8 @@ import mariadb
 
 from api.database.db import get_connection
 from api.models.GroupModel import Group, row_to_group
+from api.models.TopicModel import row_to_topic
+from api.models.UserModel import row_to_user
 from api.utils.AppExceptions import NotFoundException, EmptyDbException
 from api.utils.Logger import Logger
 from api.utils.QueryParameters import QueryParameters
@@ -91,6 +93,41 @@ class GroupService:
                 connection_dbgroups.commit()
             connection_dbgroups.close()
             return f'Group {groupId} deleted'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def delete_group_user(cls, userId: int, groupId: int):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with (connection_dbgroups.cursor()) as cursor_dbgroups:
+                query = "delete from relationusersgroups where `group` = '{}' and user = '{}'".format(groupId, userId)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return f'User {userId} from Group {groupId} has been deleted'
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def delete_group_topic(cls, groupId: int, topicId: int):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            with ((connection_dbgroups.cursor()) as cursor_dbgroups):
+                query = ("delete from relationtopicsgroups "
+                         "where `group` = '{}' and topic = '{}'").format(groupId, topicId)
+                cursor_dbgroups.execute(query)
+                connection_dbgroups.commit()
+            connection_dbgroups.close()
+            return f'Topic {topicId} from Group {groupId} has been deleted'
         except NotFoundException:
             raise
         except Exception as ex:
@@ -198,15 +235,42 @@ class GroupService:
             connection_dbgroups = get_connection('dbgroups')
             users_list = []
             with connection_dbgroups.cursor() as cursor_dbgroups:
-                query = "select * from relationusersgroups where `group` = '{}'".format(groupId)
+                query = ("SELECT id, username, password, NAME, surname, email, image FROM relationusersgroups a "
+                         "INNER JOIN dbusers.`users` b ON a.`user` = b.id WHERE `group` = '{}'").format(groupId)
                 cursor_dbgroups.execute(query)
                 result_set = cursor_dbgroups.fetchall()
-
                 if not result_set:
                     raise EmptyDbException("No groups found")
                 for row in result_set:
-                    userId = row[1]
-                    users_list.append(userId)
+                    user = row_to_user(row)
+                    users_list.append(user)
+            connection_dbgroups.close()
+            return users_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
+
+    @classmethod
+    def get_group_remaining_users(cls, groupId):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            users_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT c.id, c.username, c.password, c.NAME, c.surname, c.email, c.image "
+                         "FROM dbusers.users c LEFT JOIN"
+                         "(SELECT id, username, password, NAME, surname, email, image FROM relationusersgroups a "
+                         "INNER JOIN dbusers.`users` b ON a.`user` = b.id WHERE `group` = '{}')"
+                         "d ON c.id = d.id WHERE d.id IS NULL").format(groupId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    user = row_to_user(row)
+                    users_list.append(user)
             connection_dbgroups.close()
             return users_list
         except NotFoundException:
@@ -222,15 +286,15 @@ class GroupService:
             connection_dbgroups = get_connection('dbgroups')
             topics_list = []
             with connection_dbgroups.cursor() as cursor_dbgroups:
-                query = "select * from relationtopicsgroups where `group` = '{}'".format(groupId)
+                query = ("SELECT id, title, deadline, unit FROM relationtopicsgroups a INNER JOIN `topics` b ON "
+                         "a.`topic` = b.id WHERE `group` = '{}'").format(groupId)
                 cursor_dbgroups.execute(query)
                 result_set = cursor_dbgroups.fetchall()
-
                 if not result_set:
                     raise EmptyDbException("No groups found")
                 for row in result_set:
-                    topicId = row[1]
-                    topics_list.append(topicId)
+                    topic = row_to_topic(row)
+                    topics_list.append(topic)
             connection_dbgroups.close()
             return topics_list
         except NotFoundException:
@@ -240,4 +304,28 @@ class GroupService:
             Logger.add_to_log("error", traceback.format_exc())
             raise
 
+    @classmethod
+    def get_group_remaining_topics(cls, groupId):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            topics_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT c.id, c.title, c.deadline, c.unit  FROM `topics` c LEFT JOIN"
+                         "(SELECT id, title, deadline, unit FROM relationtopicsgroups a INNER JOIN `topics` b ON "
+                         "a.`topic` = b.id WHERE `group` = '{}')d ON c.id = d.id WHERE d.id IS NULL").format(groupId)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No groups found")
+                for row in result_set:
+                    topic = row_to_topic(row)
+                    topics_list.append(topic)
+            connection_dbgroups.close()
+            return topics_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
 
