@@ -88,6 +88,34 @@ def get_topic_groups(topic_id: int):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@topics.route('/<topic_id>/rubrics', methods=['GET'])
+@Security.authenticate
+@Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.READ)])
+def get_topic_rubrics(topic_id: int):
+    try:
+        topic_id = int(topic_id)
+        rubrics_list = TopicService.get_topic_rubrics(topic_id)
+        response_rubrics = []
+        for rubric in rubrics_list:
+            response_rubrics.append(rubric.to_json())
+        response = jsonify({'success': True, 'data': response_rubrics})
+        return response, HTTPStatus.OK
+    except EmptyDbException as ex:
+        response = jsonify({'success': False, 'message': ex.message})
+        return response, ex.error_code
+    except NotFoundException as ex:
+        response = jsonify({'message': ex.message, 'success': False})
+        return response, ex.error_code
+    except ValueError:
+        return jsonify({'message': "Topic id must be an integer", 'success': False})
+    except Exception as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
+        response = jsonify({'message': str(ex), 'success': False})
+        return response, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+
 @topics.route('/<topic_id>/groups-remaining', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.READ)])

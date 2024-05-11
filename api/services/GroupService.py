@@ -163,6 +163,7 @@ class GroupService:
             connection_dbgroups = get_connection('dbgroups')
             with connection_dbgroups.cursor() as cursor_dbgroups:
                 query = "insert into relationusersgroups set user='{}', `group`='{}'".format(userId, groupId)
+                Logger.add_to_log("info", query)
                 cursor_dbgroups.execute(query)
                 connection_dbgroups.commit()
             connection_dbgroups.close()

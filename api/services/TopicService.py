@@ -4,6 +4,7 @@ import mariadb
 
 from api.database.db import get_connection
 from api.models.GroupModel import row_to_group
+from api.models.RubricModel import row_to_rubric
 from api.models.TopicModel import Topic
 from api.models.TopicModel import row_to_topic, Topic
 from api.utils.AppExceptions import NotFoundException, EmptyDbException
@@ -179,7 +180,38 @@ class TopicService:
             Logger.add_to_log("error", str(ex))
             Logger.add_to_log("error", traceback.format_exc())
             raise
+    
+    @classmethod
+    def get_topic_rubrics(cls, topic_id):
+        try:
+            connection_dbgroups = get_connection('dbgroups')
+            rubrics_list = []
+            with connection_dbgroups.cursor() as cursor_dbgroups:
+                query = ("SELECT DISTINCT d.* FROM dbcourses.rubrics d "
+                         "INNER JOIN (SELECT `rubric` FROM dbcourses.relationrubricssubjects c "
+                         "INNER JOIN (SELECT `subject` FROM dbcourses.classes b "
+                         "INNER JOIN (SELECT `class`FROM `groups` a "
+                         "INNER JOIN (SELECT `group` FROM relationtopicsgroups WHERE topic = '{}') aa "
+                         "ON a.id = aa.`group`) bb ON b.id = bb.`class`) cc "
+                         "ON c.`subject` = cc.`subject`) dd "
+                         "ON d.id = dd.rubric").format(topic_id)
+                cursor_dbgroups.execute(query)
+                result_set = cursor_dbgroups.fetchall()
+                if not result_set:
+                    raise EmptyDbException("No rubrics found")
+                for row in result_set:
+                    rubric = row_to_rubric(row)
+                    rubrics_list.append(rubric)
+            connection_dbgroups.close()
+            return rubrics_list
+        except NotFoundException:
+            raise
+        except Exception as ex:
+            Logger.add_to_log("error", str(ex))
+            Logger.add_to_log("error", traceback.format_exc())
+            raise
 
+    
     @classmethod
     def get_topic_remaining_groups(cls, topic_id):
         try:
