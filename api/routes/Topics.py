@@ -115,7 +115,6 @@ def get_topic_rubrics(topic_id: int):
         return response, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-
 @topics.route('/<topic_id>/groups-remaining', methods=['GET'])
 @Security.authenticate
 @Security.authorize(permissions_required=[(PermissionName.TOPICS_MANAGER, PermissionType.READ)])
@@ -149,6 +148,7 @@ def get_topic_remaining_groups(topic_id: int):
 def add_topic():
     try:
         # Guardamos la fecha en formato datetime
+        Logger.add_to_log("info", request.json)
         deadline = datetime.datetime.fromisoformat(request.json["deadline"])
         # Convertimos a utc y guardamos en formato Y-m-d H:M:S
         deadline_utc = deadline.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")

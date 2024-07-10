@@ -322,9 +322,13 @@ def assign_topic_to_group():
         response = jsonify({'message': response_message, 'success': True})
         return response, HTTPStatus.OK
     except mariadb.IntegrityError as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
         response = handle_maria_db_exception(ex)
         return response, HTTPStatus.BAD_REQUEST
-    except KeyError:
+    except KeyError as ex:
+        Logger.add_to_log("error", str(ex))
+        Logger.add_to_log("error", traceback.format_exc())
         response = jsonify({'message': 'Bad body format', 'success': False})
         return response, HTTPStatus.BAD_REQUEST
     except NotFoundException as ex:
